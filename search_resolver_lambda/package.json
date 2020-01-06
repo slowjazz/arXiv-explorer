@@ -1,0 +1,16 @@
+{
+  "name": "search_resolver_lambda",
+  "version": "1.0.0",
+  "description": "AWS Lambda Deployment Package source ",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "ArXiv Explorer",
+  "license": "MIT",
+  "dependencies": {
+    "aws-sdk": "^2.597.0",
+    "elasticsearch": "^16.5.0",
+    "http-aws-es": "^6.0.0"
+  }
+}

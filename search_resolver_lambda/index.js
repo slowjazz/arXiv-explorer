@@ -19,7 +19,7 @@ exports.handler = (event, context, callback) => {
         done(new Error(`Invalid Elasticsearch URL "${ES_DOMAIN_URL}`));
     }
     
-    const queryES = (phrase, interval, category = null) => {
+    async function queryES(phrase, interval, category, send){
         const esClient = new es.Client({
             hosts: [ES_DOMAIN_URL],
             connectionClass: awsES
@@ -47,16 +47,17 @@ exports.handler = (event, context, callback) => {
             body: queryBody
 
         }, (err, res) => {
-            if (err) return err;
+            if (err) throw err;
             console.log(res);
-            return res;
+            console.log(res.hits.total);
+            send(null, JSON.stringify(res.hits.total));
         });
     }
 
     switch (event.httpMethod) {
         case 'POST':
-            const queryRes = queryES("discrete", 0);
-            done(queryRes);
+            queryES("discrete", 0, 0, done);
+            break
         default:
             done(new Error(`Unsupported method "${event.httpMethod}"`));
     }

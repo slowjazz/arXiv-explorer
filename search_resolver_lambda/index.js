@@ -20,6 +20,7 @@ exports.handler = (event, context, callback) => {
     }
     
     async function queryES(phrase, interval, category, send){
+        console.log('interval: ', interval)
         const esClient = new es.Client({
             hosts: [ES_DOMAIN_URL],
             connectionClass: awsES
@@ -31,32 +32,49 @@ exports.handler = (event, context, callback) => {
         const queryBody = {
             "query": {
                 "bool": {
-                    "must": [
-                        {"match": {"title": phrase}}
-                    ],
-                    // "filter" : [
-                    //     {"range": {}}
-                    // ]
+                    "must": {
+                        "query_string": {
+                            "query": phrase
+                        }
+                    },
+                    "filter": {
+                        "range": {
+                            "fields.published_date": {
+                                "gte": interval.start,
+                                "lte": interval.end
+                            }
+                        }
+                    }
                 }
-            }
+            },
+
+        // Query for aggregations, i.e. count # of documents found in specified intervals
+        // "aggs": {
+        //     "counts": {
+        //         "histogram": {
+        //             "field": "fields.published_date",
+        //             "interval": 10000000.0,
+        //             "offset": 1546437606.0
+        //         }
+        //     }
+        // }
         }
 
         esClient.search({
             index: ES_INDEX,
-            q: phrase,
             body: queryBody
 
         }, (err, res) => {
             if (err) throw err;
             console.log(res);
-            console.log(res.hits.total);
             send(null, JSON.stringify(res.hits.total));
         });
     }
 
     switch (event.httpMethod) {
         case 'POST':
-            queryES("discrete", 0, 0, done);
+            const body = JSON.parse(event.body);
+            queryES(body.phrases[0], body.interval, body.category, done);
             break
         default:
             done(new Error(`Unsupported method "${event.httpMethod}"`));

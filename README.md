@@ -1,6 +1,10 @@
 # arXiv-explorer
 
-
+### Component Repos
+1. Data loading - https://github.com/kkacquah/arxiv-public-datasets
+2. Elasticsearch service indexing - https://github.com/kkacquah/arxiv-explorer-search-indexer
+3. Front end - https://github.com/kkacquah/arxiv-explorer-front-end
+4. Web service/backend - https://github.com/kkacquah/arxiv-explorer-web-service 
 
 ### Acknowledgements
 Thank you to the below authors for providing scraping scripts for loading ArXiv data.

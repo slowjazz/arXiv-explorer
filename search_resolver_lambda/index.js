@@ -32,6 +32,7 @@ exports.handler = (event, context, callback) => {
         // https://www.elastic.co/guide/en/elasticsearch/reference/2.3/search-aggregations-bucket-histogram-aggregation.html
 
         const queryBody = {
+            _source: false,
             query: {
                 bool: {
                     must: {
@@ -67,17 +68,35 @@ exports.handler = (event, context, callback) => {
             }
         );
     }
-
+         
     async function queryES(req) {
         return Promise.all(req['phrases'].map(phrase => 
-            singleQueryES(phrase, req.period, req.interval, req.category) 
-        ));
+            singleQueryES(phrase, req.period, req.interval, req.category)));
      }
+
+    function transformAgg(data){
+        return data.aggregations.counts.buckets.map(bucket => ({
+            t: bucket.key,
+            y: bucket.doc_count
+        }))
+    }
+
+    async function getESResponse(req){
+        const res = await queryES(req);
+        const resFiltered = res.map((obj, i) => ({
+            phrase: req.phrases[i],
+            data: obj
+        })).map(markedObj => ({
+            phrase: markedObj.phrase,
+            data: transformAgg(markedObj.data)
+        }));
+        return resFiltered
+    }
 
     switch (event.httpMethod) {
         case "POST":
             const body = JSON.parse(event.body);
-            queryES(body).then(res => done(null, res));
+            getESResponse(body).then(res => done(null, res));
             break;
         default:
             done(new Error(`Unsupported method "${event.httpMethod}"`));

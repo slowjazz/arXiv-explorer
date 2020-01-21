@@ -2,8 +2,6 @@ const es = require("elasticsearch");
 const awsES = require("http-aws-es");
 
 exports.handler = (event, context, callback) => {
-    console.log("Received event:", JSON.stringify(event, null, 2));
-
     const done = (err, res) =>
         callback(null, {
             statusCode: err ? "400" : "200",
@@ -20,8 +18,9 @@ exports.handler = (event, context, callback) => {
         done(new Error(`Invalid Elasticsearch URL "${ES_DOMAIN_URL}`));
     }
 
-    async function singleQueryES(phrase, period, interval, category) {
-        console.log("interval: ", period);
+    async function singleQueryES(phrase, period, category) {
+        const start = Math.trunc(period.start)
+        const end = Math.trunc(period.end);
         const esClient = new es.Client({
             hosts: [ES_DOMAIN_URL],
             connectionClass: awsES
@@ -29,10 +28,11 @@ exports.handler = (event, context, callback) => {
 
         // ES 2.3 Query and Aggregations
         // https://www.elastic.co/guide/en/elasticsearch/reference/2.3/query-filter-context.html
-        // https://www.elastic.co/guide/en/elasticsearch/reference/2.3/search-aggregations-bucket-histogram-aggregation.html
+        // https://www.elastic.co/guide/en/elasticsearch/reference/2.3/search-aggregations-bucket-datehistogram-aggregation.html
 
         const queryBody = {
             _source: false,
+            size: 0,
             query: {
                 bool: {
                     must: {
@@ -43,8 +43,8 @@ exports.handler = (event, context, callback) => {
                     filter: {
                         range: {
                             "fields.published_date": {
-                                gte: period.start,
-                                lte: period.end
+                                gte: start,
+                                lte: end
                             }
                         }
                     }
@@ -52,11 +52,11 @@ exports.handler = (event, context, callback) => {
             },
 
             aggs: {
-                counts: {
-                    histogram: {
+                articles_over_time: {
+                    date_histogram: {
                         field: "fields.published_date",
-                        interval: interval,
-                        offset: period.start
+                        interval: "month",
+                        format: "yyyy-MM-dd"
                     }
                 }
             }
@@ -71,18 +71,19 @@ exports.handler = (event, context, callback) => {
          
     async function queryES(req) {
         return Promise.all(req['phrases'].map(phrase => 
-            singleQueryES(phrase, req.period, req.interval, req.category)));
+            singleQueryES(phrase, req.period, req.category)));
      }
 
     function transformAgg(data){
-        return data.aggregations.counts.buckets.map(bucket => ({
-            t: bucket.key,
+        return data.aggregations.articles_over_time.buckets.map(bucket => ({
+            t: parseInt(bucket.key_as_string),
             y: bucket.doc_count
         }))
     }
 
     async function getESResponse(req){
         const res = await queryES(req);
+        console.log(res);
         const resFiltered = res.map((obj, i) => ({
             phrase: req.phrases[i],
             data: obj

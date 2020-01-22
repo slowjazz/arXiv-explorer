@@ -6,6 +6,11 @@
 3. Front end - https://github.com/kkacquah/arxiv-explorer-front-end
 4. Web service/backend - https://github.com/kkacquah/arxiv-explorer-web-service 
 
+### Contributors
+
+- Kenneth Acquah ([kkacquah](https://github.com/kkacquah))
+- Kenneth Li ([slowjazz](https://github.com/slowjazz))
+
 ### Acknowledgements
 Thank you to the below authors for providing scraping scripts for loading ArXiv data.
 

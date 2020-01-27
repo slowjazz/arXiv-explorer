@@ -43,8 +43,8 @@ exports.handler = (event, context, callback) => {
       query: {
         bool: {
           must: {
-            query_string: {
-              query: phrase
+            match_phrase: {
+              "fields.abstract": phrase
             }
           },
           filter: {
